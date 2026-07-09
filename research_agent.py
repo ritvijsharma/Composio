@@ -34,7 +34,6 @@ Where it needs a human:
     pages, gated PitchBook research portals) need a human to open the
     page in a real browser and copy the relevant paragraph.
 """
-
 import json
 import re
 import time
@@ -46,7 +45,7 @@ from urllib.parse import quote_plus
 import requests
 from bs4 import BeautifulSoup
 
-DUCKDUCKGO_HTML = "https://html.duckduckgo.com/html/"
+DUCKDUCKGO_HTML = "https://duckduckgo.com/html/"
 HEADERS = {"User-Agent": "Mozilla/5.0 (research-agent; +https://composio.dev)"}
 
 
@@ -102,21 +101,47 @@ def try_composio_lookup(app_slug: str) -> Optional[AppRecord]:
     except Exception:
         return None
 
+def web_search(query):
+    url = "https://duckduckgo.com/html/"
 
-def web_search(query: str, max_results: int = 5) -> list[dict]:
-    """Free, keyless search via DuckDuckGo's HTML endpoint."""
-    resp = requests.post(
-        DUCKDUCKGO_HTML,
-        data={"q": query},
-        headers=HEADERS,
-        timeout=15,
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://duckduckgo.com/",
+    }
+
+    resp = requests.get(
+        url,
+        params={"q": query},
+        headers=headers,
+        timeout=20,
     )
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "lxml")
+
+    if resp.status_code != 200:
+        print("Search failed:", resp.status_code)
+        return []
+
+    soup = BeautifulSoup(resp.text, "html.parser")
     results = []
     for a in soup.select("a.result__a")[:max_results]:
         results.append({"title": a.get_text(strip=True), "url": a.get("href")})
     return results
+
+# def web_search(query: str, max_results: int = 5) -> list[dict]:
+    """Free, keyless search via DuckDuckGo's HTML endpoint."""
+    # resp = requests.post(
+    #     DUCKDUCKGO_HTML,
+    #     data={"q": query},
+    #     headers=HEADERS,
+    #     timeout=15,
+    # )
+    # resp.raise_for_status()
+    # soup = BeautifulSoup(resp.text, "lxml")
+    # results = []
+    # for a in soup.select("a.result__a")[:max_results]:
+    #     results.append({"title": a.get_text(strip=True), "url": a.get("href")})
+    # return results
 
 
 def fetch_page_text(url: str, max_chars: int = 4000) -> str:
@@ -185,13 +210,19 @@ def main():
     parser.add_argument("--sleep", type=float, default=1.5, help="politeness delay between apps")
     args = parser.parse_args()
 
+
+
+    
+
     import csv
     records = []
     with open(args.input) as f:
         for row in csv.DictReader(f):
-            rec = research_app(row["name"], row["category"], row.get("hint_url", ""))
+            # rec = research_app(row["name"], row["category"], row.get("hint_url", ""))
+            rec = research_app(row["App"], row["Category"], row.get("Website / Hint", ""))
             records.append(dataclasses.asdict(rec))
-            print(f"[done] {row['name']}: {rec.auth_methods} / {rec.self_serve}")
+            # print(f"[done] {row['name']}: {rec.auth_methods} / {rec.self_serve}")
+            print(f"[done] {row['App']}: {rec.auth_methods} / {rec.self_serve}")
             time.sleep(args.sleep)
 
     with open(args.output, "w") as f:
