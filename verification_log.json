@@ -1,0 +1,82 @@
+{
+  "methodology": "10 apps were sampled from the 94 'first-pass' rows that had NOT yet been individually live-searched (these were populated from general documented technical knowledge, e.g. 'Stripe uses API keys'). Each sampled row was then checked against a live web search + the app's own docs page, exactly like the pipeline's fallback path would. A row is scored a MISS if any of {auth method, self-serve/gated status, or MCP/API-surface existence} was wrong or meaningfully incomplete.",
+  "sample_size": 10,
+  "sampled_apps": ["Consensus", "Waterfall.io", "Ahrefs", "Neo4j", "Squarespace", "Brex", "Grain", "Fathom", "SE Ranking", "Devin"],
+  "results": [
+    {
+      "app": "Consensus",
+      "first_pass_claim": "Gated, no public API found, blocked",
+      "verified_finding": "Has a live official MCP server (OAuth, self-serve free tier) plus a documented REST reference; only the high-volume/enterprise tier needs an application",
+      "verdict": "MISS -> corrected",
+      "evidence": "https://docs.consensus.app/docs/mcp"
+    },
+    {
+      "app": "Waterfall.io",
+      "first_pass_claim": "No public docs found, blocked",
+      "verified_finding": "Has a documented self-serve REST API (api.waterfall.io), API key issued immediately on signup",
+      "verdict": "MISS -> corrected",
+      "evidence": "https://www.waterfall.io/"
+    },
+    {
+      "app": "Ahrefs",
+      "first_pass_claim": "API is a paid add-on, no free key, gated",
+      "verified_finding": "Confirmed on re-check: Ahrefs API requires a separate paid API subscription on top of a regular plan; no free/trial API key exists",
+      "verdict": "HIT",
+      "evidence": "ahrefs.com/api pricing page"
+    },
+    {
+      "app": "Neo4j",
+      "first_pass_claim": "Basic/Bearer auth, self-serve via free AuraDB tier, but the real interface is Cypher-over-Bolt not REST",
+      "verified_finding": "Confirmed: AuraDB free tier is instant self-serve, and the primary query interface is the Bolt protocol/drivers rather than a general REST CRUD surface (Aura has a separate small management REST API)",
+      "verdict": "HIT",
+      "evidence": "neo4j.com/docs, Aura API docs"
+    },
+    {
+      "app": "Squarespace",
+      "first_pass_claim": "Commerce API needs a paid Commerce-tier site",
+      "verified_finding": "Confirmed: Squarespace's Commerce APIs require an active Commerce plan on the site; the lower-tier plans don't expose API keys for commerce endpoints",
+      "verdict": "HIT",
+      "evidence": "developers.squarespace.com requirements page"
+    },
+    {
+      "app": "Brex",
+      "first_pass_claim": "Gated behind an approved/funded Brex business account",
+      "verified_finding": "Confirmed: Brex API credentials are only issued to live, underwritten business accounts -- there's no sandbox available without one",
+      "verdict": "HIT",
+      "evidence": "developer.brex.com"
+    },
+    {
+      "app": "Grain",
+      "first_pass_claim": "API gated behind Business/Enterprise plan",
+      "verified_finding": "Largely confirmed, though Grain has since added a narrower Zapier-based path for lower tiers that softens the 'full block' framing slightly",
+      "verdict": "PARTIAL -> nuance added",
+      "evidence": "grain.com developer docs + Zapier listing"
+    },
+    {
+      "app": "Fathom",
+      "first_pass_claim": "Native API limited to Team/Enterprise plans, Zapier for lower tiers",
+      "verified_finding": "Confirmed on re-check",
+      "verdict": "HIT",
+      "evidence": "fathom.video help docs"
+    },
+    {
+      "app": "SE Ranking",
+      "first_pass_claim": "API is add-on/plan-tier dependent",
+      "verified_finding": "Confirmed: API access is bundled starting at specific paid plan tiers, not available on the base/free trial",
+      "verdict": "HIT",
+      "evidence": "seranking.com/api"
+    },
+    {
+      "app": "Devin",
+      "first_pass_claim": "API/MCP gated behind a paid Devin plan, no free self-serve tier",
+      "verified_finding": "Confirmed on re-check",
+      "verdict": "HIT",
+      "evidence": "docs.devin.ai"
+    }
+  ],
+  "scoring": {
+    "first_pass_accuracy_on_this_sample": "8/10 = 80%",
+    "after_correction_accuracy": "10/10 = 100% (2 rows fixed in the master dataset, 1 row given added nuance)",
+    "note": "This 80% first-pass rate on a knowledge-only sample is the reason the assignment's verification loop matters: general technical knowledge about 'what auth does X use' is usually right for mainstream, stable APIs, but gets shakier for newer/smaller products (MCP servers ship monthly; smaller vendors' access models change without much announcement). The two misses were both apps that had shipped a new MCP server or API surface recently -- exactly the kind of thing a one-time training snapshot won't know and a live search catches immediately."
+  }
+}
